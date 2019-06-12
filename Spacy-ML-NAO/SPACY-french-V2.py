@@ -6,6 +6,8 @@ import random
 import string # to process standard python strings
 import warnings
 import warnings
+from speech import SpeechToText as st
+from speech import TextToSpeech as ts
 warnings.filterwarnings('ignore')
 
 #librairies a importer avec pip avant utilisation ici
@@ -117,23 +119,30 @@ def response(user_response):
 
 #Main
 flag=True
+welcome_String = "Mon nom est NAO. Je répondrai à vos questions sur la MIAGE de Nanterre Université. Pour quitter, tapez Bye"
 print("\nNAO: Mon nom est NAO. Je répondrai à vos questions sur la MIAGE de Nanterre Université. Pour quitter, tapez Bye")
+ts.conversion(welcome_String)
 print("\nQuelle thématique vous intéresse ? "+
                 "\n• Orientation : dites Orientation afin d'en savoir plus sur la réorientation, les concours, ..."+
                 "\n• Questions Pratiques : Dites Pratique pour en savoir plus sur la carte étudiante, l'ENT, le fonctionnement des notes et des cours, ..."+
                 "\n• Erasmus : dites Erasmus afin d'en savoir plus sur le programme Erasmus")
+menu_string = "Quelle thématique vous intéresse ? "+"dites Orientation afin d'en savoir plus sur la réorientation, les concours, ..."+"Questions Pratiques : Dites Pratique pour en savoir plus sur la carte étudiante, l'ENT, le fonctionnement des notes et des cours, ..."+ "Erasmus : dites Erasmus afin d'en savoir plus sur le programme Erasmus"
+ts.conversion(menu_string)
 while(flag==True):
-    user_response = input()
+    user_response = st.conversion()
+    print (user_response)
     user_response=user_response.lower()
     if(user_response!='bye'):
         if(user_response=='merci' or user_response=='merci beaucoup' ):
             print("NAO: Avec plaisir...")
+            ts.conversion("NAO: Avec plaisir...")
         else:
             if(user_response=='menu'):
                 print("\nNAO: Quelle thématique vous intéresse ? "+
                 "\n• Orientation : dites Orientation afin d'en savoir plus sur la réorientation, les concours, ..."+
                 "\n• Questions Pratiques : Dites Pratique pour en savoir plus sur la carte étudiante, l'ENT, le fonctionnement des notes et des cours, ..."+
                 "\n• Erasmus : dites Erasmus afin d'en savoir plus sur le programme Erasmus")
+                ts.conversion(menu_string)
             else:
                 if(greeting(user_response)!=None):
                     print("\nNAO: "+greeting(user_response))
@@ -141,11 +150,13 @@ while(flag==True):
                     if(selectionTheme(user_response)!=0):
                         print("\nNAO: "+ selectionTheme(user_response))
                         print("Merci d'attendre la fin du chargement ...")
+                        ts.conversion("Merci d'attendre la fin du chargement")
                         sent_tokens = get_tokens()
                         menu=True
                         while (menu == True):
                             print("Veuillez entrer votre demande")
-                            user_response = input()
+                            user_response = st.conversion()
+                            print(user_response)
                             user_response=user_response.lower()
                             print("NAO: ",end="")
                             print(response(user_response))
@@ -159,4 +170,7 @@ while(flag==True):
 
     else:
         flag=False
-        print("NAO: Bye bye ! A bientot !")  
+        bye_string ="Bye bye ! A bientot !"
+        print(bye_string)
+        ts.conversion(bye_string)
+
