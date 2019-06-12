@@ -6,6 +6,9 @@ import random
 import string # to process standard python strings
 import warnings
 import warnings
+import sys
+from speech import SpeechToText as st
+from speech import TextToSpeech as ts
 warnings.filterwarnings('ignore')
 
 #librairies a importer avec pip avant utilisation ici
@@ -27,26 +30,19 @@ THX_INPUTS = ("merci", "merci beaucoup", "super", "gracias", "cimer","bsartek")
 THX_RESPONSES = ["avec plaisir", "a vot' service !"]
 
 # Selection des thèmes (documents)
+MAP_THEMES ={"orientation":"Vous pouvez poser des questions sur les sujets suivant : la réorientation, les concours et plus \n", "pratique":"Vous pouvez poser des questions sur les sujets suivant : carte étudiante \t\t soutien \t\t ENT \n fonctionnement \t\t notes et cours \t\t stage \n association \t\t et autres services proposés par l'université\n", "erasmus":"Découvrez-en plus sur le programme Erasmus : à qui s'adresser, aides financières et plus \n", "bye":"bye"}
 MENU_INPUTS = ("orientation", "pratique", "erasmus")
 MENU_RESPONSES = ["data-orientation.txt", "data-pratiques.txt", "data-erasmus.txt"]
+#MENU_TEXTS = ("\nQuelle thématique vous intéresse ? "+"\n dites Orientation afin d'en savoir plus sur la réorientation et les concours."+"\n• Dites Pratique pour en savoir plus sur la carte étudiante, l'ENT et  le fonctionnement des notes et des cours"+"\n•dites Erasmus afin d'en savoir plus sur le programme Erasmus")
+MENU_TEXTS = ("Menu Orientation Pratique Erasmus")
 
 monFichierDeDonnee = ""
 nlp = spacy.load('fr_core_news_md') 
 sent_tokens = ""
-tmp = 0
+themeLoaded = 0
 stopWords = spacy.lang.fr.stop_words.STOP_WORDS
 
-"""
-# Preprocessing
-def LemTokens(tokens):
-    return [(token.lemma_) for token in tokens]
 
-remove_punct = dict((ord(punct), None) for punct in string.punctuation)
-
-def LemNormalize(text):
-    texte_sans_ponct = text.lower().translate(remove_punct)
-    return LemTokens(nlp(texte_sans_ponct))
-"""
 # Preprocessing
 lemmer = WordNetLemmatizer()
 def LemTokens(tokens):
@@ -55,35 +51,21 @@ remove_punct_dict = dict((ord(punct), None) for punct in string.punctuation)
 def LemNormalize(text):
     return LemTokens(nltk.word_tokenize(text.lower().translate(remove_punct_dict)))
 
+
 def greeting(sentence):
     """Si l'utilisateur envoie une salutation, répondre par une salutation"""
     for word in sentence.split():
-        if word.lower() in GREETING_INPUTS:
+        if word in GREETING_INPUTS:
             return random.choice(GREETING_RESPONSES)
 
 def remerciement(sentence):
     """Si l'utilisateur envoie une salutation, répondre par une salutation"""
     for word in sentence.split():
-        if word.lower() in THX_INPUTS:
+        if word in THX_INPUTS:
             return random.choice(THX_RESPONSES)
 
-def selectionTheme(sentence):
-    """Si l'utilisateur envoie une selection de theme, met à jour le nom du document source pour qu'il pointe vers ce thème"""
-    global monFichierDeDonnee
-    for word in sentence.split():
-        if word.lower() in MENU_INPUTS: 
-            if(word.lower() == MENU_INPUTS[0]):
-                monFichierDeDonnee = MENU_RESPONSES[0]
-                return "Vous pouvez poser des questions sur les sujets suivant : la réorientation, les concours, ...\n"
-            else:
-                if(word.lower() == MENU_INPUTS[1]):
-                    monFichierDeDonnee = MENU_RESPONSES[1]
-                    return "Vous pouvez poser des questions sur les sujets suivant : carte étudiante \t\t soutien \t\t ENT \n fonctionnement \t\t notes et cours \t\t stage \n association \t\t services proposés par l'université\n"
-                else:
-                    if(word.lower() == MENU_INPUTS[2]):
-                        monFichierDeDonnee = MENU_RESPONSES[2]
-                        return "Découvrez-en plus sur le programme Erasmus : à qui s'adresser, aides financières, ...\n"
-             
+
+
 # Générer une réponse
 def response(user_response):
     NAO_response=''
@@ -113,32 +95,21 @@ def response(user_response):
         NAO_response = NAO_response + sent_tokens[idx] #indice de la phrase/réponse qui a le plus au score de correspondance avec la question
         return NAO_response
 
-def recogniseTransverse(user_response):
+def greetingOrRemerciement(user_response):
     if (greeting(user_response)):
         return greeting(user_response)
     elif (remerciement(user_response)):
         return remerciement(user_response)
-    elif (user_response=='menu'):
-        return menu(user_response)
-    
-def quitter():
-    print("NAO: Bye bye ! A bientot !")
-    return false
 
-def menu(user_response):
-    txtMenu = ("\nQuelle thématique vous intéresse ? "+"\n• Orientation : dites Orientation afin d'en savoir plus sur la réorientation, les concours, ..."+"\n• Questions Pratiques : Dites Pratique pour en savoir plus sur la carte étudiante, l'ENT, le fonctionnement des notes et des cours, ..."+"\n• Erasmus : dites Erasmus afin d'en savoir plus sur le programme Erasmus")
-    print(txtMenu)
-    user_response = input()
-    user_response=user_response.lower()
-    global sent_tokens
-    theme = selectionTheme(user_response)
-    if(theme!=0):
-        print("\nNAO: "+ theme)
-        sent_tokens = get_tokens()
-        global tmp
-        tmp = 1
-        return "\n Chargement terminé !"
-  
+
+def selectionTheme(sentence):
+    """Si l'utilisateur envoie une selection de theme, met à jour le nom du document source pour qu'il pointe vers ce thème"""
+    global monFichierDeDonnee
+    for word in sentence.split():
+        if word in MAP_THEMES: 
+            monFichierDeDonnee = "data-"+word+".txt"
+            return  MAP_THEMES.get(word)
+
 #Lecture de la source de données      
 def get_tokens():
     with open(monFichierDeDonnee, 'r', encoding='utf8', errors ='ignore') as maBDD:
@@ -146,32 +117,86 @@ def get_tokens():
     #remove the punctuation using the character deletion step of translate
     #Tokenisation
     global sent_tokens
-    """global nlp
-    nlp.add_pipe(nlp.create_pipe('sentencizer'), before="parser") # updated
-    doc = nlp(raw) # Passage du texte par le pipeline
-    word_tokens = [w for w in doc] # converts to list of words
-    sent_tokens = [s.string.strip() for s in doc.sents] #converts to list of sentences 
-    """
+
     sent_tokens = nltk.sent_tokenize(raw)# converts to list of sentences 
     word_tokens = nltk.word_tokenize(raw)# converts to list of words
     return sent_tokens
 
 #Main
 def main ():
-    flag=True
-    print("\nNAO: Mon nom est NAO. Je répondrai à vos questions sur la MIAGE de Nanterre Université. Pour quitter, tapez Bye")
-    print("\nNAO: Pour changer de thème, tapez Menu")
-    global tmp
+    nao("Mon nom é NAO. Je répondrai à vos questions sur la MIAGE de Nanterre Université. Pour quitter, dites Bye")
+    nao("Pour choisir un thème,dites Menu")
+    
+    global themeLoaded
     global sent_tokens
-    tmp=0
-    while(flag==True):
-        user_response = input()
-        user_response=user_response.lower()
-        if (user_response=='bye'):
-            flag=False
-        elif(recogniseTransverse(user_response)!=None):
-            print("\nNAO: Vous pouvez entrer votre demande")
-        elif(user_response != None and tmp==1):
-            print("\nNAO: ",end="")
-            print(response(user_response))
+    themeLoaded=0
+
+    navigator=Navigator()
+    while(True):
+        user_response = st.conversion()
+        printUser(user_response)
+
+        if(navigator.indirect(user_response)=="Invalid" and themeLoaded==1):
+            nao(response(user_response))
             sent_tokens.remove(user_response)
+
+
+def nao(text):
+    print("\n ##NAO## : "+text)
+    ts.conversion(text)
+
+def printUser(text):
+    if(text=="Invalid String"):
+        nao("Navré je n'ai pas compris")
+    else :
+        print("\n ##You## : "+text)
+
+
+
+class Navigator(object):
+          def indirect(self,name):
+                  # map to key TODO
+
+                   #name ==self.getMethodName(text)
+                method=getattr(self,name,lambda :'Invalid')
+                return method()
+          def bye(self):
+                   ts.conversion("Bye bye ! A bientot !")
+                   sys.exit()                   
+          def greetings(self):
+                    #TODO
+                    return 'greetings'
+
+          def menu(self):
+                    nao(MENU_TEXTS)
+                    user_response = st.conversion()
+                    printUser(user_response)
+                    self.indirect(user_response)
+
+          def erasmus(self):
+                    self.doMenu("erasmus")
+          def orientation(self):
+                    self.doMenu("orientation")
+          def pratique(self):
+                    self.doMenu("pratique")
+                             
+          def doMenu(self,choice):
+                    theme = selectionTheme(choice)
+                    self.loadTheme(theme)
+                    
+          def loadTheme(self,theme):
+                    global sent_tokens
+                    nao(theme)
+                    sent_tokens = get_tokens()
+                    global themeLoaded
+                    themeLoaded = 1     
+          def response(self,user_response):
+                    nao(response(user_response))
+                    sent_tokens.remove(user_response)
+"""
+
+         #def getMethodName(text)
+            liste=[] orientation erasmus menu ..
+            if(text in list)
+            return text
+            else enfonction du text je retourne soit bye soit greetings"""

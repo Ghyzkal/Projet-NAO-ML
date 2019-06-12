@@ -1,5 +1,5 @@
 import speech_recognition as sr
-import TextToSpeech as ts
+
 
 def conversion():	
 	r = sr.Recognizer()
@@ -8,11 +8,9 @@ def conversion():
 		#print("Comment Puis-je vous aider ? :")
 		audio = r.listen(source)
 		try:
-			text = format(r.recognize_google(audio, language='fr-FR'))
-			#ts.conversion("Vous avez choisi "+text)
-			return text.lower()
+			return format(r.recognize_google(audio, language='fr-FR')).lower()
 		except:
-			return "Navré, je ne vous comprends pas"
+			return "Invalid String"
 
 
 
