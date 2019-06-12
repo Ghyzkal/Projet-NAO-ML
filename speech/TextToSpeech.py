@@ -1,6 +1,7 @@
-from gtts import gTTS
-
+import pyttsx3
 
 def conversion(text):
-	speech = gTTS(text,lang='fr-FR')
-	speech.save('speech.mp3')
+	speech = pyttsx3.init()
+	speech.say(text)
+	speech.runAndWait()
+
