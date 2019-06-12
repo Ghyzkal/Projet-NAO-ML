@@ -1,4 +1,4 @@
-import  SPACY_french_V1 as spacy
+import Chatbot_ProjetSI as chatbot
 
-spacy.main()
+chatbot.main()
 
