@@ -89,7 +89,7 @@ def response(user_response):
     flat.sort()
     req_tfidf = flat[-2]
     if(req_tfidf==0):
-        NAO_response=NAO_response + "Désolé ! Je n'ai pas compris."
+        NAO_response=NAO_response
         return NAO_response
     else:
         NAO_response = NAO_response + sent_tokens[idx] #indice de la phrase/réponse qui a le plus au score de correspondance avec la question
@@ -154,18 +154,19 @@ def printUser(text):
 
 
 class Navigator(object):
-          def indirect(self,name):
-                  # map to key TODO
-
-                   #name ==self.getMethodName(text)
+          def indirect(self,text):
+                name=self.getMethodName(text)
                 method=getattr(self,name,lambda :'Invalid')
                 return method()
           def bye(self):
-                   ts.conversion("Bye bye ! A bientot !")
-                   sys.exit()                   
+                   nao("Bye bye ! A bientot !")
+                   sys.exit()  
+
           def greetings(self):
-                    #TODO
-                    return 'greetings'
+                    nao(random.choice(GREETING_RESPONSES))
+
+          def thanks(self):
+                    nao(random.choice(THX_RESPONSES))
 
           def menu(self):
                     nao(MENU_TEXTS)
@@ -193,10 +194,15 @@ class Navigator(object):
           def response(self,user_response):
                     nao(response(user_response))
                     sent_tokens.remove(user_response)
-"""
 
-         #def getMethodName(text)
-            liste=[] orientation erasmus menu ..
-            if(text in list)
-            return text
-            else enfonction du text je retourne soit bye soit greetings"""
+          def getMethodName(self,text):
+                    liste=["menu", "bye", "orientation", "pratique", "erasmus"]
+                    for word in text.split():
+                        if word in liste:
+                            return word
+                        if word in GREETING_INPUTS:
+                            return "greetings"
+                        if word in THX_INPUTS:
+                            return "thanks"
+                    
+                    return "Invalid"
